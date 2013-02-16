@@ -1,0 +1,9 @@
+
+SUB QBI_SYSTEM (c$)
+r$ = mid$(c$, 7)
+if r$ > "" then
+	SYSTEM val(r$)
+else
+	SYSTEM
+end if
+END SUB

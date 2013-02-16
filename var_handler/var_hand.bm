@@ -1,0 +1,11 @@
+
+
+'returns index to variable list -- -1 if variable doesn't exist yet
+SUB get_variable_index (a$, sc)
+
+END SUB
+
+'typ should be one of the CONST type names in var_hand.bi
+SUB create_variable (n$, typ)
+if QBI_
+END SUB

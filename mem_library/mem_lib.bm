@@ -1,0 +1,136 @@
+'FTP Client
+'Copyright Matt Kilgore -- 2011/2013
+
+'This program is free software, without any warranty of any kind.
+'You are free to edit, copy, modify, and redistribute it under the terms
+'of the Do What You Want Public License, Version 1, as published by Matt Kilgore
+'See file COPYING that should have been included with this source.
+
+FUNCTION MEM_get_str$ (s AS MEM_string_type)
+$CHECKING:OFF
+IF s.is_allocated <> 0 AND s.length > 0 THEN
+  FOR x = 1 TO s.length
+    get_s$ = get_s$ + _MEMGET(s.mem, s.mem.OFFSET + x - 1, STRING * 1)
+  NEXT x
+END IF
+MEM_get_str$ = get_s$
+$CHECKING:ON
+END FUNCTION
+
+SUB MEM_put_str (s AS MEM_string_type, stri$)
+$CHECKING:OFF
+IF NOT s.is_allocated OR s.allocated < LEN(stri$) THEN
+  IF s.is_allocated THEN _MEMFREE s.mem
+  s.mem = _MEMNEW(LEN(stri$) + 10) 'allocate 10 extra bytes
+  s.allocated = LEN(stri$) + 10
+  s.is_allocated = -1
+END IF
+_MEMPUT s.mem, s.mem.OFFSET, stri$
+s.length = LEN(stri$)
+$CHECKING:ON
+END SUB
+
+FUNCTION MEM_get_str_array$ (a AS MEM_array_type, array_number)
+DIM s AS MEM_string_type
+$CHECKING:OFF
+_MEMGET a.mem, a.mem.OFFSET + array_number * LEN(s), s
+'_MEMCOPY a.mem, a.mem.OFFSET + array_number * LEN(string_type), LEN(string_type) TO m, m.OFFSET
+$CHECKING:ON
+
+MEM_get_str_array$ = MEM_get_str$(s)
+END FUNCTION
+
+SUB MEM_put_str_array (a AS MEM_array_type, array_number, s$)
+$CHECKING:OFF
+DIM st as MEM_string_type
+_MEMGET a.mem, a.mem.OFFSET + array_number * LEN(st), st
+MEM_put_str st, s$
+_MEMPUT a.mem, a.mem.OFFSET + array_number * LEN(st), st
+
+$CHECKING:ON
+END SUB
+
+'SUB get_filedir_type_array (a AS array_type, array_number, f AS filedir_type)
+'DIM m AS _MEM
+''$CHECKING:OFF
+'m = _MEM(f)
+'_MEMCOPY a.mem, a.mem.OFFSET + array_number * LEN(f), LEN(f) TO m, m.OFFSET
+''$CHECKING:ON
+'END SUB
+
+SUB MEM_allocate_array (a AS MEM_array_type, number_of_elements, element_size)
+$CHECKING:OFF
+IF NOT a.is_allocated THEN
+  'not already allocated
+  a.element_size = element_size
+  a.length = number_of_elements 'add one to make it go from 0 to number_of_elements as BASIC programers would expect
+  a.is_allocated = -1
+  a.allocated = (a.length + 1) * element_size
+  a.mem = _MEMNEW((a.length + 1) * element_size)
+  _MEMFILL a.mem, a.mem.OFFSET, (a.length + 1) * element_size, 0 as _byte
+elseif a.element_size = element_size then
+  MEM_reallocate_array a, number_of_elements
+END IF
+$CHECKING:ON
+
+END SUB
+
+SUB MEM_reallocate_array (a AS MEM_array_type, number_of_elements)
+
+DIM temp AS _MEM
+$CHECKING:OFF
+IF NOT a.is_allocated THEN
+  IF a.element_size > 0 THEN MEM_allocate_array a, number_of_elements, a.element_size ELSE ERROR 255
+ELSE 'reallocate
+  a.length = number_of_elements + 1:
+  IF (number_of_elements + 1) * a.element_size < a.allocated THEN EXIT SUB
+  temp = a.mem
+  a.mem = _MEMNEW((number_of_elements + 1) * a.element_size)
+  _MEMFILL a.mem, a.mem.OFFSET, (number_of_elements + 1) * a.element_Size, 0 as _BYTE
+  _MEMCOPY temp, temp.OFFSET, a.allocated TO a.mem, a.mem.OFFSET
+  s.allocated = (number_of_elements + 1) * a.element_size
+  _MEMFREE temp
+END IF
+
+$CHECKING:ON
+END SUB
+
+SUB MEM_allocate_string_array (a as MEM_array_type, number_of_elements)
+DIM s as MEM_string_type
+MEM_allocate_array a, number_of_elements, LEN(s)
+END SUB
+
+SUB MEM_free_string_array (a as MEM_array_type)
+DIM s as MEM_string_type
+$CHECKING:OFF
+if a.is_allocated then
+  FOR x = 1 to a.length 'Free each individual string
+    s = _MEMGET(a.mem, a.mem.OFFSET + LEN(s) * (x - 1), MEM_string_type)
+    MEM_free_string s
+  next x
+  _MEMFREE a.mem
+  a.is_allocated = 0
+  a.allocated = 0
+end if
+$CHECKING:ON
+END SUB
+
+SUB MEM_free_array (a as MEM_array_type)
+$CHECKING:OFF
+if a.is_allocated then
+  _MEMFREE a.mem
+  a.is_allocated = 0
+  a.allocated = 0
+end if
+$CHECKING:ON
+END SUB
+
+SUB MEM_free_string (s as MEM_string_type)
+$CHECKING:OFF
+if s.is_allocated then
+  _memfree s.mem
+  s.is_allocated = 0
+  s.allocated = 0
+end if
+$CHECKING:on
+END SUB

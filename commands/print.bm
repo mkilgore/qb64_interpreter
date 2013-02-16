@@ -1,0 +1,32 @@
+
+SUB QBI_PRINT (c$)
+'Handles every PRINT ... command
+'c$ is parsed but complete line
+l$ = mid$(c$, instr(c$, " ")) 'cut off 'print'
+ul$ = ucase$(l$)
+
+loca = 0
+DO
+	loca = loca + 1
+
+	select case mid$(l$, loca, 1)
+		case chr$(34)
+			p$ = mid$(l$, loca)
+			secondp = instr(mid$(p$, 2), chr$(34)) + 1
+			if instr(mid$(p$, secondp + 1), " ") then
+			  p$ = mid$(p$, 1, instr(mid$(p$, secondp + 1), " ") + secondp)
+			end if
+			st$ = grab_str$(p$, leng)
+			loca = loca + len(p$)
+			if mid$(l$, loca, 1) = "," then
+				print st$,
+			elseif mid$(l$, loca, 1) = ";"then
+				print st$;
+			else
+				print st$
+			end if
+		case " "
+	end select
+LOOP until loca >= len(l$)
+
+END SUB
